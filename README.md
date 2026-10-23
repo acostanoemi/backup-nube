@@ -43,8 +43,32 @@ Cada corrida real deja una línea en `~/.backup_nube.log` con la fecha.
 
 El vault se respalda cifrado (seguro subirlo). Pero para abrirlo necesitás tu **master password**, que no está en ningún archivo: anotala en un lugar seguro y offline, aparte de la compu. La nube guarda el candado cerrado; la llave sigue solo con vos.
 
+## Automático con cron
+
+El comando `auto` hace el backup directo, sin preguntar ni modo prueba. Está pensado para que cron (el programador de tareas de Linux) lo corra solo.
+
+Para programarlo, editá tu crontab:
+
+```bash
+crontab -e
+```
+
+Y agregá una línea (backup todos los días a las 21:00):
+
+```
+0 21 * * *  cd /home/noemi/proyectos/backup-nube && /usr/bin/python3 backup.py auto >> /home/noemi/.backup_nube.log 2>&1
+```
+
+Los 5 campos son: minuto, hora, día del mes, mes, día de semana. `0 21 * * *` = a las 21:00 todos los días. La salida se guarda en el log para revisarla después.
+
+**Nota en laptops:** si la compu está apagada o suspendida a esa hora, cron no corre. Para que el backup se haga igual cuando prendas, se usa `anacron` (ver más abajo).
+
+## Requisitos de ruta
+
+cron no sabe en qué carpeta estás, por eso la línea hace `cd` a la carpeta del script primero y usa la ruta completa de python (`/usr/bin/python3`).
+
 ## Roadmap
 
 - [x] v1: backup y restauración a la nube con modo prueba
-- [ ] v2: correr solo (automático) cada cierto tiempo con cron
+- [x] v2: comando `auto` para correr solo con cron
 - [ ] v3: backup cifrado extra (rclone crypt) para carpetas sensibles

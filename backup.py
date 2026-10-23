@@ -130,11 +130,18 @@ def correr(direccion, aplicar):
 
 def main():
     p = argparse.ArgumentParser(description="Backup y restauracion a la nube con rclone.")
-    p.add_argument("direccion", choices=["backup", "restaurar"],
-                   help="backup = subir a la nube; restaurar = bajar de la nube")
+    p.add_argument("direccion", choices=["backup", "restaurar", "auto"],
+                   help="backup = subir; restaurar = bajar; "
+                        "auto = backup directo sin preguntar (para cron)")
     p.add_argument("-a", "--aplicar", action="store_true",
                    help="hacerlo de verdad (sin esto, solo muestra que haria)")
     args = p.parse_args()
+
+    # 'auto': backup de verdad, sin preguntas ni modo prueba. Pensado para cron.
+    if args.direccion == "auto":
+        print(f"\n===== Corrida automatica: {time.strftime('%Y-%m-%d %H:%M:%S')} =====")
+        correr("backup", aplicar=True)
+        return
 
     # La restauracion sobrescribe archivos locales: avisamos
     if args.direccion == "restaurar" and args.aplicar:
