@@ -63,6 +63,41 @@ Los 5 campos son: minuto, hora, día del mes, mes, día de semana. `0 21 * * *` 
 
 **Nota en laptops:** si la compu está apagada o suspendida a esa hora, cron no corre. Para que el backup se haga igual cuando prendas, se usa `anacron` (ver más abajo).
 
+### Que no se pierda un backup si la compu estuvo apagada (anacron)
+
+cron solo corre si la compu está prendida a la hora programada. En una laptop, eso se escapa seguido. `anacron` lo resuelve: al prender la compu, corre el backup que se haya saltado.
+
+Configuración a nivel usuario (no necesita root):
+
+```bash
+mkdir -p ~/.anacron/spool ~/.anacron/etc
+nano ~/.anacron/etc/anacrontab
+```
+
+Contenido del `anacrontab` (período en días, retraso en minutos, id, comando):
+
+```
+1  5  backup.diario  cd /home/noemi/proyectos/backup-nube && /usr/bin/python3 backup.py auto >> /home/noemi/.backup_nube.log 2>&1
+```
+
+Y que anacron se dispare al arrancar, agregando al crontab (`crontab -e`):
+
+```
+@reboot  /usr/sbin/anacron -s -t /home/noemi/.anacron/etc/anacrontab -S /home/noemi/.anacron/spool
+```
+
+Así quedan dos capas: cron a las 21:00 (si está prendida) + anacron al prender (si se saltó un día).
+
+Probar anacron sin reiniciar:
+
+```bash
+/usr/sbin/anacron -f -n -t ~/.anacron/etc/anacrontab -S ~/.anacron/spool
+```
+
+## Versionado
+
+Cuando un archivo cambia, su versión vieja no se pisa: se guarda en `_versiones/FECHA/` en la nube (vía `rclone --backup-dir`). Si un archivo se corrompe o lo editás mal y después corre el backup, podés recuperar la versión anterior. Protege contra el error clásico: que el backup copie un desastre y arruine la copia buena.
+
 ## Requisitos de ruta
 
 cron no sabe en qué carpeta estás, por eso la línea hace `cd` a la carpeta del script primero y usa la ruta completa de python (`/usr/bin/python3`).
@@ -71,4 +106,6 @@ cron no sabe en qué carpeta estás, por eso la línea hace `cd` a la carpeta de
 
 - [x] v1: backup y restauración a la nube con modo prueba
 - [x] v2: comando `auto` para correr solo con cron
-- [ ] v3: backup cifrado extra (rclone crypt) para carpetas sensibles
+- [x] v3: versionado (`--backup-dir`), resumen al final y anacron para laptops
+- [ ] v4: backup cifrado extra (rclone crypt) para carpetas sensibles
+- [ ] v5: limpiar versiones viejas automáticamente (retención)
